@@ -3,6 +3,7 @@ import logger from "morgan";
 import cors from "cors";
 import * as dotenv from "dotenv";
 import contactsRouter from "./src/routes/api/contacts.js";
+import { errorHandler } from "./src/helpers/apiHelpers.js";
 
 dotenv.config();
 
@@ -21,6 +22,4 @@ app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
 });
 
-app.use((err, req, res, next) => {
-  res.status(500).json({ message: err.message });
-});
+app.use(errorHandler);

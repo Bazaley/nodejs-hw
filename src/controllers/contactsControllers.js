@@ -1,9 +1,47 @@
-export const listContacts = async (req, res) => {};
+import {
+  listContacts,
+  getContactById,
+  addContact,
+  removeContact,
+  updateContact,
+  updateStatusContact,
+} from "../services/contactsServices.js";
 
-export const getContactById = async (req, res, next) => {};
+export const listContactsController = async (req, res) => {
+  const contacts = await listContacts();
 
-export const addContact = async (req, res, next) => {};
+  res.json({ contacts });
+};
 
-export const removeContact = async (req, res, next) => {};
+export const getContactByIdController = async (req, res, next) => {
+  const contact = await getContactById(req.params.contactId);
 
-export const updateContact = async (req, res, next) => {};
+  res.json({ contact });
+};
+
+export const addContactController = async (req, res, next) => {
+  const contact = await addContact(req.body);
+
+  res.json({ message: "contact added", contact });
+};
+
+export const removeContactController = async (req, res, next) => {
+  await removeContact(req.params.contactId);
+
+  res.json({ message: "contact deleted" });
+};
+
+export const updateContactController = async (req, res, next) => {
+  const contact = await updateContact(req.params.contactId, req.body);
+
+  res.json({ message: "contact updated", contact });
+};
+
+export const updateStatusContactController = async (req, res, next) => {
+  const contact = await updateStatusContact(
+    req.params.contactId,
+    req.body.favorite
+  );
+
+  res.json({ contact });
+};
