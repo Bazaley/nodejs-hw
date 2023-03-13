@@ -6,9 +6,16 @@ import {
   updateContact,
   updateStatusContact,
 } from "../services/contactsServices.js";
+import jwt from "jsonwebtoken";
 
 export const listContactsController = async (req, res) => {
-  const contacts = await listContacts();
+  const { id } = jwt.decode(req.headers.authorization.slice(7));
+  const contacts = await listContacts(
+    req.query.page,
+    req.query.limit,
+    req.query.favorite,
+    id
+  );
 
   res.json({ contacts });
 };
@@ -20,7 +27,8 @@ export const getContactByIdController = async (req, res, next) => {
 };
 
 export const addContactController = async (req, res, next) => {
-  const contact = await addContact(req.body);
+  const { id } = jwt.decode(req.headers.authorization.slice(7));
+  const contact = await addContact(req.body, id);
 
   res.json({ message: "contact added", contact });
 };

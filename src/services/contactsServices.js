@@ -1,10 +1,13 @@
 import { Contact } from "../db/contactModel.js";
 import { ParametersError, ValidationError } from "../helpers/errors.js";
 
-export const listContacts = async () => {
-  return await Contact.find();
-};
+export const listContacts = async (page, limit, favorite, id) => {
+  if (favorite) {
+    return await Contact.find({ favorite }).skip(page).limit(limit);
+  }
 
+  return await Contact.find({ owner: id }).skip(page).limit(limit);
+};
 export const getContactById = async (id) => {
   const contact = await Contact.findById(id);
 
@@ -15,8 +18,8 @@ export const getContactById = async (id) => {
   return contact;
 };
 
-export const addContact = async (contact) => {
-  return await Contact.create({ ...contact });
+export const addContact = async (contact, id) => {
+  return await Contact.create({ ...contact, owner: id });
 };
 
 export const removeContact = async (id) => {
