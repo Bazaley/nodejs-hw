@@ -5,7 +5,8 @@ import * as dotenv from "dotenv";
 import contactsRouter from "./src/routes/api/contacts.js";
 import { errorHandler } from "./src/helpers/apiHelpers.js";
 import "./src/config/config-passport.js";
-import authRouter from "./src/routes/api/authRouter.js";
+import usersRouter from "./src/routes/api/usersRouters.js";
+import avatarsRouter from "./src/routes/api/avatarsRouters.js";
 
 dotenv.config();
 
@@ -18,9 +19,9 @@ app.use(logger(formatsLogger));
 app.use(cors());
 app.use(json());
 
-app.use("/api/users", authRouter);
-
+app.use("/api/users", usersRouter);
 app.use("/api/contacts", contactsRouter);
+app.use("/api/avatars", avatarsRouter);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });

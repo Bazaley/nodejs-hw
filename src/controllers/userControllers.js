@@ -1,5 +1,11 @@
 import { User } from "../db/userModel.js";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
+import Jimp from "jimp";
+// import md5 from "md5";
+import fs from "fs";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 export const login = async (req, res, next) => {
   const { email, password } = req.body;
@@ -30,13 +36,15 @@ export const login = async (req, res, next) => {
 export const signup = async (req, res, next) => {
   const { email, password, name } = req.body;
 
+  const avatarURL = gravatar.url(email, { protocol: "https", s: "250" });
+
   const user = await User.findOne({ email });
 
   if (user) {
     return res.status(409).json({ code: 409, message: "Email in use" });
   }
 
-  const newUser = new User({ email, password, name });
+  const newUser = new User({ email, password, name, avatarURL });
   newUser.setPassword(password);
   newUser.save();
 
@@ -61,4 +69,21 @@ export const logout = async (req, res, next) => {
 
 export const current = async (req, res, next) => {
   res.json({ email: req.user.email, subscription: req.user.subscription });
+};
+
+export const changeAvatarController = async (req, res, next) => {
+  const { filename, path } = req.file;
+
+  const file = await Jimp.read(path);
+  file.resize(250, 250).write(`./public/avatars/${filename}`);
+
+  await User.findByIdAndUpdate(req.user._id, {
+    avatarURL: filename,
+  });
+
+  fs.unlink(path, () => {});
+
+  res.json({
+    avatarURL: filename,
+  });
 };
