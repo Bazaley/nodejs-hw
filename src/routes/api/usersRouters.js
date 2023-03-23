@@ -5,6 +5,8 @@ import {
   logout,
   current,
   changeAvatarController,
+  verify,
+  resendingEmail,
 } from "../../controllers/userControllers.js";
 import { userValidation } from "../../middlewares/validationMiddlewares.js";
 import { auth } from "../../middlewares/auth.js";
@@ -14,6 +16,8 @@ import { uploadMiddleware } from "../../middlewares/fileMiddleware.js";
 const router = Router();
 
 router.post("/signup", userValidation, signup);
+router.get("/verify/:verificationToken", verify);
+router.post("/verify", resendingEmail);
 router.post("/login", userValidation, login);
 router.get("/logout", auth, logout);
 router.get("/current", auth, current);
