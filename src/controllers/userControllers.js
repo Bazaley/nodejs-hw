@@ -2,10 +2,91 @@ import { User } from "../db/userModel.js";
 import jwt from "jsonwebtoken";
 import gravatar from "gravatar";
 import Jimp from "jimp";
-// import md5 from "md5";
 import fs from "fs";
 import * as dotenv from "dotenv";
+import { v4 as uuidv4 } from "uuid";
+import { sendEmail } from "../helpers/sendEmail.js";
+
 dotenv.config();
+
+export const signup = async (req, res, next) => {
+  const { email, password, name } = req.body;
+
+  const avatarURL = gravatar.url(email, { protocol: "https", s: "250" });
+
+  const user = await User.findOne({ email });
+
+  if (user) {
+    return res.status(409).json({ code: 409, message: "Email in use" });
+  }
+
+  const verificationToken = uuidv4();
+
+  const newUser = new User({
+    email,
+    password,
+    name,
+    avatarURL,
+    verificationToken,
+  });
+  newUser.setPassword(password);
+  newUser.save();
+
+  const mail = {
+    to: email,
+    subject: "Verify email",
+    html: `<a href="${process.env.BASE_URL}/api/users/verify/${verificationToken}">Click to verify your email</a>`,
+  };
+
+  await sendEmail(mail);
+
+  res.json({
+    code: 201,
+    user: { email: newUser.email, subscription: newUser.subscription },
+  });
+};
+
+export const verify = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken });
+
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  await User.findByIdAndUpdate(user._id, {
+    verify: true,
+    verificationToken: null,
+  });
+
+  res.status(200).json({ message: "Verification successful" });
+};
+
+export const resendingEmail = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    res.status(400).json({ message: "missing required field email" });
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user.verificationToken) {
+    res.status(400).json({ message: "Verification has already been passed" });
+    return;
+  }
+
+  const mail = {
+    to: email,
+    subject: "Verify email",
+    html: `<a href="${process.env.BASE_URL}/api/users/verify/${user.verificationToken}">Click to verify your email</a>`,
+  };
+
+  await sendEmail(mail);
+
+  res.json({ message: "Verification email sent" });
+};
 
 export const login = async (req, res, next) => {
   const { email, password } = req.body;
@@ -14,6 +95,12 @@ export const login = async (req, res, next) => {
 
   if (!user || !user.validPassword(password)) {
     res.status(401).json({ message: "Email or password is wrong" });
+    return;
+  }
+
+  if (!user.verify) {
+    res.status(401).json({ message: "Verify your mail" });
+    return;
   }
 
   const { _id: id } = user;
@@ -30,27 +117,6 @@ export const login = async (req, res, next) => {
       email: user.email,
       subscription: user.subscription,
     },
-  });
-};
-
-export const signup = async (req, res, next) => {
-  const { email, password, name } = req.body;
-
-  const avatarURL = gravatar.url(email, { protocol: "https", s: "250" });
-
-  const user = await User.findOne({ email });
-
-  if (user) {
-    return res.status(409).json({ code: 409, message: "Email in use" });
-  }
-
-  const newUser = new User({ email, password, name, avatarURL });
-  newUser.setPassword(password);
-  newUser.save();
-
-  res.json({
-    code: 201,
-    user: { email: newUser.email, subscription: newUser.subscription },
   });
 };
 
